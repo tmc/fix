@@ -1,8 +1,8 @@
 // Copyright 2011 The Go Authors.  All rights reserved.
-// Use of this source code is governed by a BSD-style
+// Use of this source code Is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package main
+package fix
 
 import (
 	"fmt"
@@ -15,13 +15,13 @@ import (
 
 // Partial type checker.
 //
-// The fact that it is partial is very important: the input is
+// The fact that it Is partial Is very important: the input Is
 // an AST and a description of some type information to
 // assume about one or more packages, but not all the
-// packages that the program imports.  The checker is
+// packages that the program imports.  The checker Is
 // expected to do as much as it can with what it has been
-// given.  There is not enough information supplied to do
-// a full type check, but the type checker is expected to
+// given.  There Is not enough information supplied to do
+// a full type check, but the type checker Is expected to
 // apply information that can be derived from variable
 // declarations, function and method returns, and type switches
 // as far as it can, so that the caller can still tell the types
@@ -41,33 +41,33 @@ import (
 //	x, y, z int
 // has type "int, int, int".
 
-// The prefix "type " is the type of a type.
+// The prefix "type " Is the type of a type.
 // For example, given
 //	var x int
 //	type T int
-// x's type is "int" but T's type is "type int".
+// x's type Is "int" but T's type Is "type int".
 // mkType inserts the "type " prefix.
 // getType removes it.
-// isType tests for it.
+// IsType tests for it.
 
 func mkType(t string) string {
 	return "type " + t
 }
 
 func getType(t string) string {
-	if !isType(t) {
+	if !IsType(t) {
 		return ""
 	}
 	return t[len("type "):]
 }
 
-func isType(t string) bool {
+func IsType(t string) bool {
 	return strings.HasPrefix(t, "type ")
 }
 
 // TypeConfig describes the universe of relevant types.
 // For ease of creation, the types are all referred to by string
-// name (e.g., "reflect.Value").  TypeByName is the only place
+// name (e.g., "reflect.Value").  TypeByName Is the only place
 // where the strings are resolved.
 
 type TypeConfig struct {
@@ -93,7 +93,7 @@ func (cfg *TypeConfig) typeof(name string) string {
 }
 
 // Type describes the Fields and Methods of a type.
-// If the field or method cannot be found there, it is next
+// If the field or method cannot be found there, it Is next
 // looked for in the Embed list.
 type Type struct {
 	Field  map[string]string // map field name to type
@@ -151,7 +151,7 @@ func typecheck(cfg *TypeConfig, f *ast.File) (typeof map[interface{}]string, ass
 		if fn.Recv != nil {
 			// The receiver must be a type.
 			rcvr := typeof[fn.Recv]
-			if !isType(rcvr) {
+			if !IsType(rcvr) {
 				if len(fn.Recv.List) != 1 {
 					continue
 				}
@@ -164,7 +164,7 @@ func typecheck(cfg *TypeConfig, f *ast.File) (typeof map[interface{}]string, ass
 			}
 			typeof[rcvr+"."+fn.Name.Name] = t
 		} else {
-			if isType(t) {
+			if IsType(t) {
 				t = getType(t)
 			} else {
 				t = gofmt(fn.Type)
@@ -223,13 +223,13 @@ func makeExprList(a []*ast.Ident) []ast.Expr {
 	return b
 }
 
-// Typecheck1 is the recursive form of typecheck.
-// It is like typecheck but adds to the information in typeof
+// Typecheck1 Is the recursive form of typecheck.
+// It Is like typecheck but adds to the information in typeof
 // instead of allocating a new map.
 func typecheck1(cfg *TypeConfig, f interface{}, typeof map[interface{}]string, assign map[string][]interface{}) {
 	// set sets the type of n to typ.
-	// If isDecl is true, n is being declared.
-	set := func(n ast.Expr, typ string, isDecl bool) {
+	// If IsDecl Is true, n Is being declared.
+	set := func(n ast.Expr, typ string, IsDecl bool) {
 		if typeof[n] != "" || typ == "" {
 			if typeof[n] != typ {
 				assign[typ] = append(assign[typ], n)
@@ -240,25 +240,25 @@ func typecheck1(cfg *TypeConfig, f interface{}, typeof map[interface{}]string, a
 
 		// If we obtained typ from the declaration of x
 		// propagate the type to all the uses.
-		// The !isDecl case is a cheat here, but it makes
+		// The !IsDecl case Is a cheat here, but it makes
 		// up in some cases for not paying attention to
 		// struct fields.  The real type checker will be
 		// more accurate so we won't need the cheat.
-		if id, ok := n.(*ast.Ident); ok && id.Obj != nil && (isDecl || typeof[id.Obj] == "") {
+		if id, ok := n.(*ast.Ident); ok && id.Obj != nil && (IsDecl || typeof[id.Obj] == "") {
 			typeof[id.Obj] = typ
 		}
 	}
 
 	// Type-check an assignment lhs = rhs.
-	// If isDecl is true, this is := so we can update
+	// If IsDecl Is true, this Is := so we can update
 	// the types of the objects that lhs refers to.
-	typecheckAssign := func(lhs, rhs []ast.Expr, isDecl bool) {
+	typecheckAssign := func(lhs, rhs []ast.Expr, IsDecl bool) {
 		if len(lhs) > 1 && len(rhs) == 1 {
 			if _, ok := rhs[0].(*ast.CallExpr); ok {
 				t := split(typeof[rhs[0]])
 				// Lists should have same length but may not; pair what can be paired.
 				for i := 0; i < len(lhs) && i < len(t); i++ {
-					set(lhs[i], t[i], isDecl)
+					set(lhs[i], t[i], IsDecl)
 				}
 				return
 			}
@@ -275,7 +275,7 @@ func typecheck1(cfg *TypeConfig, f interface{}, typeof map[interface{}]string, a
 		for i := 0; i < len(lhs) && i < len(rhs); i++ {
 			x, y := lhs[i], rhs[i]
 			if typeof[y] != "" {
-				set(x, typeof[y], isDecl)
+				set(x, typeof[y], IsDecl)
 			} else {
 				set(y, typeof[x], false)
 			}
@@ -290,9 +290,9 @@ func typecheck1(cfg *TypeConfig, f interface{}, typeof map[interface{}]string, a
 		return s
 	}
 
-	// The main type check is a recursive algorithm implemented
+	// The main type check Is a recursive algorithm implemented
 	// by walkBeforeAfter(n, before, after).
-	// Most of it is bottom-up, but in a few places we need
+	// Most of it Is bottom-up, but in a few places we need
 	// to know the type of the function we are checking.
 	// The before function records that information on
 	// the curfn stack.
@@ -308,7 +308,7 @@ func typecheck1(cfg *TypeConfig, f interface{}, typeof map[interface{}]string, a
 		}
 	}
 
-	// After is the real type checker.
+	// After Is the real type checker.
 	after := func(n interface{}) {
 		if n == nil {
 			return
@@ -316,7 +316,7 @@ func typecheck1(cfg *TypeConfig, f interface{}, typeof map[interface{}]string, a
 		if false && reflect.TypeOf(n).Kind() == reflect.Ptr { // debugging trace
 			defer func() {
 				if t := typeof[n]; t != "" {
-					pos := fset.Position(n.(ast.Node).Pos())
+					pos := FileSet.Position(n.(ast.Node).Pos())
 					fmt.Fprintf(os.Stderr, "%s: typeof[%s] = %s\n", pos, gofmt(n), t)
 				}
 			}()
@@ -331,7 +331,7 @@ func typecheck1(cfg *TypeConfig, f interface{}, typeof map[interface{}]string, a
 			typeof[n] = mkType(joinFunc(split(typeof[n.Params]), split(typeof[n.Results])))
 
 		case *ast.FieldList:
-			// Field list is concatenation of sub-lists.
+			// Field list Is concatenation of sub-lists.
 			t := ""
 			for _, field := range n.List {
 				if t != "" {
@@ -342,11 +342,11 @@ func typecheck1(cfg *TypeConfig, f interface{}, typeof map[interface{}]string, a
 			typeof[n] = t
 
 		case *ast.Field:
-			// Field is one instance of the type per name.
+			// Field Is one instance of the type per name.
 			all := ""
 			t := typeof[n.Type]
-			if !isType(t) {
-				// Create a type, because it is typically *T or *p.T
+			if !IsType(t) {
+				// Create a type, because it Is typically *T or *p.T
 				// and we might care about that type.
 				t = mkType(gofmt(n.Type))
 				typeof[n.Type] = t
@@ -370,7 +370,7 @@ func typecheck1(cfg *TypeConfig, f interface{}, typeof map[interface{}]string, a
 			// var declaration.  Use type if present.
 			if n.Type != nil {
 				t := typeof[n.Type]
-				if !isType(t) {
+				if !IsType(t) {
 					t = mkType(gofmt(n.Type))
 					typeof[n.Type] = t
 				}
@@ -403,7 +403,7 @@ func typecheck1(cfg *TypeConfig, f interface{}, typeof map[interface{}]string, a
 					}
 				}
 				tt := typeof[t+"."+name]
-				if isType(tt) {
+				if IsType(tt) {
 					typeof[n] = getType(tt)
 					return
 				}
@@ -423,12 +423,12 @@ func typecheck1(cfg *TypeConfig, f interface{}, typeof map[interface{}]string, a
 
 		case *ast.CallExpr:
 			// make(T) has type T.
-			if isTopName(n.Fun, "make") && len(n.Args) >= 1 {
+			if IsTopName(n.Fun, "make") && len(n.Args) >= 1 {
 				typeof[n] = gofmt(n.Args[0])
 				return
 			}
 			// new(T) has type *T
-			if isTopName(n.Fun, "new") && len(n.Args) == 1 {
+			if IsTopName(n.Fun, "new") && len(n.Args) == 1 {
 				typeof[n] = "*" + gofmt(n.Args[0])
 				return
 			}
@@ -455,7 +455,7 @@ func typecheck1(cfg *TypeConfig, f interface{}, typeof map[interface{}]string, a
 				return
 			}
 			// x.(T) has type T.
-			if t := typeof[n.Type]; isType(t) {
+			if t := typeof[n.Type]; IsType(t) {
 				typeof[n] = getType(t)
 			} else {
 				typeof[n] = gofmt(n.Type)
@@ -477,11 +477,11 @@ func typecheck1(cfg *TypeConfig, f interface{}, typeof map[interface{}]string, a
 			}
 
 		case *ast.StarExpr:
-			// *x for x of type *T has type T when x is an expr.
-			// We don't use the result when *x is a type, but
+			// *x for x of type *T has type T when x Is an expr.
+			// We don't use the result when *x Is a type, but
 			// compute it anyway.
 			t := expand(typeof[n.X])
-			if isType(t) {
+			if IsType(t) {
 				typeof[n] = "type *" + getType(t)
 			} else if strings.HasPrefix(t, "*") {
 				typeof[n] = t[len("*"):]
@@ -552,9 +552,9 @@ func typecheck1(cfg *TypeConfig, f interface{}, typeof map[interface{}]string, a
 			for _, cas := range n.Body.List {
 				cas := cas.(*ast.CaseClause)
 				if len(cas.List) == 1 {
-					// Variable has specific type only when there is
+					// Variable has specific type only when there Is
 					// exactly one type in the case list.
-					if tt := typeof[cas.List[0]]; isType(tt) {
+					if tt := typeof[cas.List[0]]; IsType(tt) {
 						tt = getType(tt)
 						typeof[varx] = tt
 						typeof[varx.Obj] = tt
@@ -616,7 +616,7 @@ func splitFunc(s string) (in, out []string) {
 	return nil, nil
 }
 
-// joinFunc is the inverse of splitFunc.
+// joinFunc Is the inverse of splitFunc.
 func joinFunc(in, out []string) string {
 	outs := ""
 	if len(out) == 1 {
@@ -630,7 +630,7 @@ func joinFunc(in, out []string) string {
 // split splits "int, float" into ["int", "float"] and splits "" into [].
 func split(s string) []string {
 	out := []string{}
-	i := 0 // current type being scanned is s[i:j].
+	i := 0 // current type being scanned Is s[i:j].
 	nparen := 0
 	for j := 0; j < len(s); j++ {
 		switch s[j] {
@@ -665,7 +665,7 @@ func split(s string) []string {
 	return out
 }
 
-// join is the inverse of split.
+// join Is the inverse of split.
 func join(x []string) string {
 	return strings.Join(x, ", ")
 }

@@ -4,13 +4,16 @@
 
 package main
 
-import "go/ast"
+import (
+	"github.com/tmc/fix"
+	"go/ast"
+)
 
 func init() {
-	register(netipv6zoneFix)
+	fix.Register(netipv6zoneFix)
 }
 
-var netipv6zoneFix = fix{
+var netipv6zoneFix = fix.Fix{
 	"netipv6zone",
 	"2012-11-26",
 	netipv6zone,
@@ -21,12 +24,12 @@ https://codereview.appspot.com/6849045/
 }
 
 func netipv6zone(f *ast.File) bool {
-	if !imports(f, "net") {
+	if !fix.Imports(f, "net") {
 		return false
 	}
 
 	fixed := false
-	walk(f, func(n interface{}) {
+	fix.Walk(f, func(n interface{}) {
 		cl, ok := n.(*ast.CompositeLit)
 		if !ok {
 			return
@@ -35,7 +38,7 @@ func netipv6zone(f *ast.File) bool {
 		if !ok {
 			return
 		}
-		if !isTopName(se.X, "net") || se.Sel == nil {
+		if !fix.IsTopName(se.X, "net") || se.Sel == nil {
 			return
 		}
 		switch ss := se.Sel.String(); ss {

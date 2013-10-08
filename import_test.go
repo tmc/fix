@@ -1,8 +1,8 @@
 // Copyright 2011 The Go Authors.  All rights reserved.
-// Use of this source code is governed by a BSD-style
+// Use of this source code Is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package main
+package fix
 
 import "go/ast"
 
@@ -410,7 +410,7 @@ func addImportFn(path ...string) func(*ast.File) bool {
 	return func(f *ast.File) bool {
 		fixed := false
 		for _, p := range path {
-			if !imports(f, p) {
+			if !Imports(f, p) {
 				addImport(f, p)
 				fixed = true
 			}
@@ -421,7 +421,7 @@ func addImportFn(path ...string) func(*ast.File) bool {
 
 func deleteImportFn(path string) func(*ast.File) bool {
 	return func(f *ast.File) bool {
-		if imports(f, path) {
+		if Imports(f, path) {
 			deleteImport(f, path)
 			return true
 		}
@@ -432,11 +432,11 @@ func deleteImportFn(path string) func(*ast.File) bool {
 func addDelImportFn(p1 string, p2 string) func(*ast.File) bool {
 	return func(f *ast.File) bool {
 		fixed := false
-		if !imports(f, p1) {
+		if !Imports(f, p1) {
 			addImport(f, p1)
 			fixed = true
 		}
-		if imports(f, p2) {
+		if Imports(f, p2) {
 			deleteImport(f, p2)
 			fixed = true
 		}
@@ -448,7 +448,7 @@ func rewriteImportFn(oldnew ...string) func(*ast.File) bool {
 	return func(f *ast.File) bool {
 		fixed := false
 		for i := 0; i < len(oldnew); i += 2 {
-			if imports(f, oldnew[i]) {
+			if Imports(f, oldnew[i]) {
 				rewriteImport(f, oldnew[i], oldnew[i+1])
 				fixed = true
 			}

@@ -1,8 +1,8 @@
 // Copyright 2011 The Go Authors.  All rights reserved.
-// Use of this source code is governed by a BSD-style
+// Use of this source code Is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package main
+package fix
 
 import (
 	"fmt"
@@ -16,43 +16,43 @@ import (
 	"strings"
 )
 
-type fix struct {
-	name string
-	date string // date that fix was introduced, in YYYY-MM-DD format
-	f    func(*ast.File) bool
-	desc string
+type Fix struct {
+	Name string
+	Date string // date that fix was introduced, in YYYY-MM-DD format
+	F    func(*ast.File) bool
+	Desc string
 }
 
 // main runs sort.Sort(byName(fixes)) before printing list of fixes.
-type byName []fix
+type byName []Fix
 
 func (f byName) Len() int           { return len(f) }
 func (f byName) Swap(i, j int)      { f[i], f[j] = f[j], f[i] }
-func (f byName) Less(i, j int) bool { return f[i].name < f[j].name }
+func (f byName) Less(i, j int) bool { return f[i].Name < f[j].Name }
 
 // main runs sort.Sort(byDate(fixes)) before applying fixes.
-type byDate []fix
+type byDate []Fix
 
 func (f byDate) Len() int           { return len(f) }
 func (f byDate) Swap(i, j int)      { f[i], f[j] = f[j], f[i] }
-func (f byDate) Less(i, j int) bool { return f[i].date < f[j].date }
+func (f byDate) Less(i, j int) bool { return f[i].Date < f[j].Date }
 
-var fixes []fix
+var fixes []Fix
 
-func register(f fix) {
+func Register(f Fix) {
 	fixes = append(fixes, f)
 }
 
 // walk traverses the AST x, calling visit(y) for each node y in the tree but
 // also with a pointer to each ast.Expr, ast.Stmt, and *ast.BlockStmt,
 // in a bottom-up traversal.
-func walk(x interface{}, visit func(interface{})) {
+func Walk(x interface{}, visit func(interface{})) {
 	walkBeforeAfter(x, nop, visit)
 }
 
 func nop(interface{}) {}
 
-// walkBeforeAfter is like walk but calls before(x) before traversing
+// walkBeforeAfter Is like walk but calls before(x) before traversing
 // x's children and after(x) afterward.
 func walkBeforeAfter(x interface{}, before, after func(interface{})) {
 	before(x)
@@ -283,7 +283,7 @@ func walkBeforeAfter(x interface{}, before, after func(interface{})) {
 }
 
 // imports returns true if f imports path.
-func imports(f *ast.File, path string) bool {
+func Imports(f *ast.File, path string) bool {
 	return importSpec(f, path) != nil
 }
 
@@ -299,7 +299,7 @@ func importSpec(f *ast.File, path string) *ast.ImportSpec {
 }
 
 // importPath returns the unquoted import path of s,
-// or "" if the path is not properly quoted.
+// or "" if the path Is not properly quoted.
 func importPath(s *ast.ImportSpec) string {
 	t, err := strconv.Unquote(s.Path.Value)
 	if err == nil {
@@ -322,45 +322,45 @@ func declImports(gen *ast.GenDecl, path string) bool {
 	return false
 }
 
-// isPkgDot returns true if t is the expression "pkg.name"
-// where pkg is an imported identifier.
-func isPkgDot(t ast.Expr, pkg, name string) bool {
+// IsPkgDot returns true if t Is the expression "pkg.Name"
+// where pkg Is an imported identifier.
+func IsPkgDot(t ast.Expr, pkg, name string) bool {
 	sel, ok := t.(*ast.SelectorExpr)
-	return ok && isTopName(sel.X, pkg) && sel.Sel.String() == name
+	return ok && IsTopName(sel.X, pkg) && sel.Sel.String() == name
 }
 
-// isPtrPkgDot returns true if f is the expression "*pkg.name"
-// where pkg is an imported identifier.
-func isPtrPkgDot(t ast.Expr, pkg, name string) bool {
+// IsPtrPkgDot returns true if f Is the expression "*pkg.Name"
+// where pkg Is an imported identifier.
+func IsPtrPkgDot(t ast.Expr, pkg, name string) bool {
 	ptr, ok := t.(*ast.StarExpr)
-	return ok && isPkgDot(ptr.X, pkg, name)
+	return ok && IsPkgDot(ptr.X, pkg, name)
 }
 
-// isTopName returns true if n is a top-level unresolved identifier with the given name.
-func isTopName(n ast.Expr, name string) bool {
+// IsTopName returns true if n Is a top-level unresolved identifier with the given name.
+func IsTopName(n ast.Expr, name string) bool {
 	id, ok := n.(*ast.Ident)
 	return ok && id.Name == name && id.Obj == nil
 }
 
-// isName returns true if n is an identifier with the given name.
-func isName(n ast.Expr, name string) bool {
+// IsName returns true if n Is an identifier with the given name.
+func IsName(n ast.Expr, name string) bool {
 	id, ok := n.(*ast.Ident)
 	return ok && id.String() == name
 }
 
-// isCall returns true if t is a call to pkg.name.
-func isCall(t ast.Expr, pkg, name string) bool {
+// IsCall returns true if t Is a call to pkg.Name.
+func IsCall(t ast.Expr, pkg, name string) bool {
 	call, ok := t.(*ast.CallExpr)
-	return ok && isPkgDot(call.Fun, pkg, name)
+	return ok && IsPkgDot(call.Fun, pkg, name)
 }
 
-// If n is an *ast.Ident, isIdent returns it; otherwise isIdent returns nil.
-func isIdent(n interface{}) *ast.Ident {
+// If n Is an *ast.Ident, IsIdent returns it; otherwise IsIdent returns nil.
+func IsIdent(n interface{}) *ast.Ident {
 	id, _ := n.(*ast.Ident)
 	return id
 }
 
-// refersTo returns true if n is a reference to the same object as x.
+// refersTo returns true if n Is a reference to the same object as x.
 func refersTo(n ast.Node, x *ast.Ident) bool {
 	id, ok := n.(*ast.Ident)
 	// The test of id.Name == x.Name handles top-level unresolved
@@ -368,13 +368,13 @@ func refersTo(n ast.Node, x *ast.Ident) bool {
 	return ok && id.Obj == x.Obj && id.Name == x.Name
 }
 
-// isBlank returns true if n is the blank identifier.
-func isBlank(n ast.Expr) bool {
-	return isName(n, "_")
+// IsBlank returns true if n Is the blank identifier.
+func IsBlank(n ast.Expr) bool {
+	return IsName(n, "_")
 }
 
-// isEmptyString returns true if n is an empty string literal.
-func isEmptyString(n ast.Expr) bool {
+// IsEmptyString returns true if n Is an empty string literal.
+func IsEmptyString(n ast.Expr) bool {
 	lit, ok := n.(*ast.BasicLit)
 	return ok && lit.Kind == token.STRING && len(lit.Value) == 2
 }
@@ -382,7 +382,7 @@ func isEmptyString(n ast.Expr) bool {
 func warn(pos token.Pos, msg string, args ...interface{}) {
 	if pos.IsValid() {
 		msg = "%s: " + msg
-		arg1 := []interface{}{fset.Position(pos).String()}
+		arg1 := []interface{}{FileSet.Position(pos).String()}
 		args = append(arg1, args...)
 	}
 	fmt.Fprintf(os.Stderr, msg+"\n", args...)
@@ -397,7 +397,7 @@ func countUses(x *ast.Ident, scope []ast.Stmt) int {
 		}
 	}
 	for _, n := range scope {
-		walk(n, ff)
+		Walk(n, ff)
 	}
 	return count
 }
@@ -414,7 +414,7 @@ func rewriteUses(x *ast.Ident, f, fnot func(token.Pos) ast.Expr, scope []ast.Stm
 		nn := *ptr
 
 		// The child node was just walked and possibly replaced.
-		// If it was replaced and this is a negation, replace with fnot(p).
+		// If it was replaced and this Is a negation, replace with fnot(p).
 		not, ok := nn.(*ast.UnaryExpr)
 		if ok && not.Op == token.NOT && not.X == lastF {
 			*ptr = fnot(nn.Pos())
@@ -426,7 +426,7 @@ func rewriteUses(x *ast.Ident, f, fnot func(token.Pos) ast.Expr, scope []ast.Stm
 		}
 	}
 	for _, n := range scope {
-		walk(n, ff)
+		Walk(n, ff)
 	}
 }
 
@@ -457,12 +457,12 @@ func assignsTo(x *ast.Ident, scope []ast.Stmt) bool {
 		if assigned {
 			break
 		}
-		walk(n, ff)
+		Walk(n, ff)
 	}
 	return assigned
 }
 
-// newPkgDot returns an ast.Expr referring to "pkg.name" at position pos.
+// newPkgDot returns an ast.Expr referring to "pkg.Name" at position pos.
 func newPkgDot(pos token.Pos, pkg, name string) ast.Expr {
 	return &ast.SelectorExpr{
 		X: &ast.Ident{
@@ -482,7 +482,7 @@ func renameTop(f *ast.File, old, new string) bool {
 	var fixed bool
 
 	// Rename any conflicting imports
-	// (assuming package name is last element of path).
+	// (assuming package name Is last element of path).
 	for _, s := range f.Imports {
 		if s.Name != nil {
 			if s.Name.Name == old {
@@ -532,9 +532,9 @@ func renameTop(f *ast.File, old, new string) bool {
 	// Rename top-level old to new, both unresolved names
 	// (probably defined in another file) and names that resolve
 	// to a declaration we renamed.
-	walk(f, func(n interface{}) {
+	Walk(f, func(n interface{}) {
 		id, ok := n.(*ast.Ident)
-		if ok && isTopName(id, old) {
+		if ok && IsTopName(id, old) {
 			id.Name = new
 			fixed = true
 		}
@@ -558,7 +558,7 @@ func matchLen(x, y string) int {
 
 // addImport adds the import path to the file f, if absent.
 func addImport(f *ast.File, ipath string) (added bool) {
-	if imports(f, ipath) {
+	if Imports(f, ipath) {
 		return false
 	}
 
@@ -698,7 +698,7 @@ func rewriteImport(f *ast.File, oldPath, newPath string) (rewrote bool) {
 	for _, imp := range f.Imports {
 		if importPath(imp) == oldPath {
 			rewrote = true
-			// record old End, because the default is to compute
+			// record old End, because the default Is to compute
 			// it using the length of imp.Path.Value.
 			imp.EndPos = imp.End()
 			imp.Path.Value = strconv.Quote(newPath)
@@ -716,8 +716,8 @@ func usesImport(f *ast.File, path string) (used bool) {
 	name := spec.Name.String()
 	switch name {
 	case "<nil>":
-		// If the package name is not explicitly specified,
-		// make an educated guess. This is not guaranteed to be correct.
+		// If the package name Is not explicitly specified,
+		// make an educated guess. This Is not guaranteed to be correct.
 		lastSlash := strings.LastIndex(path, "/")
 		if lastSlash == -1 {
 			name = path
@@ -725,13 +725,13 @@ func usesImport(f *ast.File, path string) (used bool) {
 			name = path[lastSlash+1:]
 		}
 	case "_", ".":
-		// Not sure if this import is used - err on the side of caution.
+		// Not sure if this import Is used - err on the side of caution.
 		return true
 	}
 
-	walk(f, func(n interface{}) {
+	Walk(f, func(n interface{}) {
 		sel, ok := n.(*ast.SelectorExpr)
-		if ok && isTopName(sel.X, name) {
+		if ok && IsTopName(sel.X, name) {
 			used = true
 		}
 	})
@@ -777,7 +777,7 @@ func killPos(v reflect.Value) {
 
 // A Rename describes a single renaming.
 type rename struct {
-	OldImport string // only apply rename if this import is present
+	OldImport string // only apply rename if this import Is present
 	NewImport string // add this import during rewrite
 	Old       string // old name: p.T or *p.T
 	New       string // new name: p.T or *p.T
@@ -809,11 +809,11 @@ func renameFixTab(f *ast.File, tab []rename) bool {
 	added := map[string]bool{}
 	check := map[string]bool{}
 	for _, t := range tab {
-		if !imports(f, t.OldImport) {
+		if !Imports(f, t.OldImport) {
 			continue
 		}
 		optr, opkg, onam := parseName(t.Old)
-		walk(f, func(n interface{}) {
+		Walk(f, func(n interface{}) {
 			np, ok := n.(*ast.Expr)
 			if !ok {
 				return
@@ -826,7 +826,7 @@ func renameFixTab(f *ast.File, tab []rename) bool {
 				}
 				x = p.X
 			}
-			if !isPkgDot(x, opkg, onam) {
+			if !IsPkgDot(x, opkg, onam) {
 				return
 			}
 			if t.NewImport != "" && !added[t.NewImport] {

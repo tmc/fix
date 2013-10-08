@@ -1,15 +1,22 @@
-// Copyright 2011 The Go Authors.  All rights reserved.
-// Use of this source code Is governed by a BSD-style
+// Copyright 2012 The Go Authors.  All rights reserved.
+// Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package fix
+package main
 
 import (
+	"github.com/tmc/fix"
 	"go/ast"
 	"go/parser"
 	"strings"
 	"testing"
 )
+
+var fixes = []fix.Fix{netipv6zoneFix}
+
+func init() {
+	addTestCases(netipv6zoneTests, netipv6zone)
+}
 
 type testCase struct {
 	Name string
@@ -34,14 +41,48 @@ func addTestCases(t []testCase, fn func(*ast.File) bool) {
 
 func fnop(*ast.File) bool { return false }
 
+var netipv6zoneTests = []testCase{
+	{
+		Name: "netipv6zone.0",
+		In: `package main
+
+import "net"
+
+func f() net.Addr {
+	a := &net.IPAddr{ip1}
+	sub(&net.UDPAddr{ip2, 12345})
+	c := &net.TCPAddr{IP: ip3, Port: 54321}
+	d := &net.TCPAddr{ip4, 0}
+	p := 1234
+	e := &net.TCPAddr{ip4, p}
+	return &net.TCPAddr{ip5}, nil
+}
+`,
+		Out: `package main
+
+import "net"
+
+func f() net.Addr {
+	a := &net.IPAddr{IP: ip1}
+	sub(&net.UDPAddr{IP: ip2, Port: 12345})
+	c := &net.TCPAddr{IP: ip3, Port: 54321}
+	d := &net.TCPAddr{IP: ip4}
+	p := 1234
+	e := &net.TCPAddr{IP: ip4, Port: p}
+	return &net.TCPAddr{IP: ip5}, nil
+}
+`,
+	},
+}
+
 func parseFixPrint(t *testing.T, fn func(*ast.File) bool, desc, in string, mustBeGofmt bool) (out string, fixed, ok bool) {
-	file, err := parser.ParseFile(FileSet, desc, in, ParserMode)
+	file, err := parser.ParseFile(fix.FileSet, desc, in, fix.ParserMode)
 	if err != nil {
 		t.Errorf("%s: parsing: %v", desc, err)
 		return
 	}
 
-	outb, err := GofmtFile(file)
+	outb, err := fix.GofmtFile(file)
 	if err != nil {
 		t.Errorf("%s: printing: %v", desc, err)
 		return
@@ -63,7 +104,7 @@ func parseFixPrint(t *testing.T, fn func(*ast.File) bool, desc, in string, mustB
 		fixed = fn(file)
 	}
 
-	outb, err = GofmtFile(file)
+	outb, err = fix.GofmtFile(file)
 	if err != nil {
 		t.Errorf("%s: printing: %v", desc, err)
 		return
@@ -120,7 +161,7 @@ func TestRewrite(t *testing.T) {
 }
 
 func tdiff(t *testing.T, a, b string) {
-	data, err := Diff([]byte(a), []byte(b))
+	data, err := fix.Diff([]byte(a), []byte(b))
 	if err != nil {
 		t.Error(err)
 		return
